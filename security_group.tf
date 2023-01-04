@@ -9,6 +9,7 @@ output "my_ip" {
 resource "aws_security_group" "example_app" {
   name        = "secg_example_app"
   description = "Allow HTTP/HTTPS"
+  vpc_id      = aws_vpc.example_app.id
 
   ingress {
     description = "HTTP"
