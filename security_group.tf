@@ -12,7 +12,6 @@ resource "aws_security_group" "example_app" {
   vpc_id      = aws_vpc.example_app.id
 
   ingress {
-    description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -20,7 +19,6 @@ resource "aws_security_group" "example_app" {
   }
 
   ingress {
-    description = "HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -28,7 +26,6 @@ resource "aws_security_group" "example_app" {
   }
 
   ingress {
-    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"

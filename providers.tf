@@ -4,3 +4,6 @@ provider "aws" {
 
 provider "http" {
 }
+
+provider "random" {
+}
