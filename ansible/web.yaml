@@ -1,0 +1,82 @@
+---
+- name: Setup ASP.NET Core web server behind Nginx reverse proxy
+  hosts: web
+  become: yes
+  vars:
+    repo_url: https://github.com/LevanBerelidze/asp-net-core-example-app.git
+    app_name: asp-net-core-example-app
+  tasks:
+    - name: Install packages
+      package:
+        name:
+          - git
+          - nginx
+          - dotnet-sdk-6.0
+        state: present
+
+    - name: Create user
+      user:
+        name: "{{ app_name }}"
+
+    - name: Copy Kestrel service definition file
+      copy:
+        src: "files/{{ app_name }}.service"
+        dest: "/etc/systemd/system/{{ app_name }}.service"
+      notify:
+        - Reload daemon
+        - Restart Kestrel service
+
+    - name: Clone source code project
+      git:
+        repo: "{{ repo_url }}"
+        dest: "/usr/local/src/{{ app_name }}"
+      notify:
+        - Publish project
+        - Restart Kestrel service
+
+    - name: Start and enable Kestrel service
+      service:
+        name: "{{ app_name }}"
+        state: started
+        enabled: yes
+
+    - name: Copy Nginx site config
+      copy:
+        src: "files/nginx/{{ app_name }}"
+        dest: "/etc/nginx/sites-available/{{ app_name }}"
+      notify:
+        - Restart Nginx
+
+    - name: Enable Nginx site
+      file:
+        src: "/etc/nginx/sites-available/{{ app_name }}"
+        dest: "/etc/nginx/sites-enabled/{{ app_name }}"
+        state: link
+      notify:
+        - Restart Nginx
+
+    - name: Update default Nginx site
+      copy:
+        src: files/nginx/default
+        dest: /etc/nginx/sites-available/default
+      notify:
+        - Restart Nginx
+
+  handlers:
+    - name: Publish project
+      command:
+        cmd: dotnet publish -c Release -f net6.0 -o /var/www/{{ app_name }}
+        chdir: "/usr/local/src/{{ app_name }}"
+
+    - name: Reload daemon
+      systemd: daemon_reload=yes
+
+    - name: Restart Kestrel service
+      service:
+        name: "{{ app_name }}"
+        state: restarted
+
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
